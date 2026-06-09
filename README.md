@@ -1,6 +1,6 @@
 # 🜁 RWA x⁰ = 1 — Agentic PCE
 
-**`1.madeinathens.eth.limo`** — NFT #1 *is* the DApp: a single tokenized SET that unites a family of contracts on **Base mainnet**, by [madeinathens.eth](https://app.ens.domains/1.madeinathens.eth).
+**`0.1.madeinathens.eth.limo`** — NFT #1 *is* the DApp: a single tokenized SET that unites a family of contracts on **Base mainnet**, by [madeinathens.eth](https://app.ens.domains/1.madeinathens.eth).
 
 > Your consumption is not debt. It is RWA x⁰ = 1 Agentic PCE.
 > 1:1 Human × Agent. The human is the only bridge — by choice, not by automation.
