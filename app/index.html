@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic QR · 1.madeinathens.eth.limo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Archivo+Black&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<style>
+  :root{
+    --void:#0a0a0a; --ink:#141210; --gold:#E8B923; --gold-dim:#8a7320;
+    --red:#C1272D; --green:#3fae6b; --line:#2a2620; --txt:#e9e2cf; --mute:#8c8676;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--void);color:var(--txt);font-family:"JetBrains Mono",ui-monospace,monospace}
+  body{font-size:14px;line-height:1.55;min-height:100vh;
+    background-image:
+      radial-gradient(circle at 8% -8%, rgba(232,185,35,.07), transparent 38%),
+      radial-gradient(circle at 100% 0%, rgba(193,39,45,.06), transparent 34%),
+      repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.012) 3px 4px);}
+  a{color:var(--gold);text-decoration:none;border-bottom:1px dotted var(--gold-dim)}
+  .wrap{max-width:940px;margin:0 auto;padding:20px 16px 90px}
+
+  #splash{position:fixed;inset:0;background:#000;z-index:50;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;transition:opacity .7s ease}
+  #splash.gone{opacity:0;pointer-events:none}
+  #splash .mk{font-size:46px;color:var(--red);animation:pulse 1.6s infinite}
+  #splash h1{font-family:"Archivo Black",sans-serif;color:var(--gold);font-size:30px;margin:0;letter-spacing:-.5px}
+  #splash p{color:var(--mute);margin:0;font-size:13px}
+  #splash .bar{width:160px;height:3px;background:var(--line);overflow:hidden;margin-top:6px}
+  #splash .bar i{display:block;height:100%;width:40%;background:var(--gold);animation:load 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    border-bottom:2px solid var(--gold);padding-bottom:12px;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .mk{color:var(--red);font-size:22px}
+  .brand h1{font-family:"Archivo Black",sans-serif;font-size:20px;color:var(--gold);margin:0;letter-spacing:-.5px}
+  .ctrls{display:flex;gap:8px;align-items:center}
+  .lang{border:1px solid var(--line);background:#000;color:var(--mute);padding:5px 8px;cursor:pointer;font-family:inherit;font-size:12px}
+  .lang.active{color:var(--gold);border-color:var(--gold)}
+
+  .hero{padding:14px 0 22px;border-bottom:1px solid var(--line);margin-bottom:18px}
+  .hero h2{font-family:"Archivo Black",sans-serif;font-size:clamp(26px,6vw,42px);line-height:1.05;margin:0 0 10px;color:var(--txt)}
+  .hero h2 .au{color:var(--gold)}
+  .hero p{color:var(--mute);margin:0;max-width:62ch}
+
+  button{font-family:inherit;font-weight:700;cursor:pointer;border:2px solid var(--gold);background:#000;color:var(--gold);
+    padding:10px 16px;text-transform:uppercase;letter-spacing:1px;transition:.15s;font-size:13px}
+  button:hover:not(:disabled){background:var(--gold);color:#000}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.green{border-color:var(--green);color:var(--green)} button.green:hover:not(:disabled){background:var(--green);color:#000}
+  button.red{border-color:var(--red);color:var(--red)} button.red:hover:not(:disabled){background:var(--red);color:#000}
+
+  .pill{border:1px solid var(--line);padding:5px 9px;font-size:11px;color:var(--mute)}
+  .pill.ok{border-color:var(--green);color:var(--green)} .pill.bad{border-color:var(--red);color:var(--red)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);background:rgba(20,18,16,.65);padding:15px}
+  .card.backstop{border-color:var(--gold-dim);background:linear-gradient(180deg,rgba(232,185,35,.06),rgba(20,18,16,.65))}
+  .card h3{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);margin:0 0 11px;border-bottom:1px solid var(--line);padding-bottom:7px}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dotted #1f1c17}
+  .kv span:first-child{color:var(--mute)} .kv span:last-child{text-align:right;word-break:break-all}
+
+  .actions{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}
+  .actions button{flex:1;min-width:120px;padding:16px;font-size:15px}
+  .actErr{color:var(--gold);font-size:12px;min-height:16px;margin-top:4px;white-space:pre-wrap;word-break:break-all}
+  .note{color:var(--mute);font-size:11px;margin-top:6px}
+
+  .aya{border:2px solid var(--red);background:linear-gradient(180deg, rgba(193,39,45,.08), rgba(20,18,16,.65));padding:18px;margin:20px 0}
+  .aya h3{font-family:"Archivo Black",sans-serif;color:var(--red);font-size:18px;margin:0 0 6px}
+  .aya .lead{color:var(--mute);font-size:12.5px;margin:0 0 12px;max-width:64ch}
+  .aya textarea{width:100%;height:220px;background:#000;border:1px solid var(--line);color:var(--txt);font-family:inherit;font-size:11.5px;padding:12px;resize:vertical;line-height:1.5}
+  .aya .row{display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap}
+  .aya .copied{color:var(--green);font-size:12px}
+
+  .principle{border-left:3px solid var(--gold-dim);padding:6px 0 6px 12px;margin:9px 0;color:var(--txt);font-size:12.5px}
+  .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .links a{border:1px solid var(--line);padding:6px 10px;font-size:11.5px}
+  .foot{margin-top:30px;border-top:1px solid var(--line);padding-top:14px;color:var(--mute);font-size:11px;line-height:1.7}
+  code{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="mk">🜁</div>
+  <h1>AGENTIC QR</h1>
+  <p>Your cash receipt is Agent.</p>
+  <div class="bar"><i></i></div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="mk">🜁</span><h1>AGENTIC QR</h1></div>
+    <div class="ctrls">
+      <span class="lang active" id="langEN" onclick="setLang('en')">EN</span>
+      <span class="lang" id="langEL" onclick="setLang('el')">ΕΛ</span>
+      <button id="connectBtn">Connect</button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h2><span class="au">Your cash receipt</span><br><span data-i18n="heroTail">is Agent.</span></h2>
+    <p data-i18n="heroSub">Consumed once. Remembered forever. NFT #1 is the DApp — one set uniting the whole protocol. RWA x⁰ = 1.</p>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <span class="pill" id="netPill">read-only</span>
+      <span class="pill" id="capPill">title: max SELL 3.30 USDC</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3 data-i18n="stateTitle">NFT #1 · live state</h3>
+      <div class="kv"><span data-i18n="price">price now</span><span id="m_price">—</span></div>
+      <div class="kv"><span data-i18n="phase">phase</span><span id="m_phase">—</span></div>
+      <div class="kv"><span>step / cycle</span><span id="m_sc">—</span></div>
+      <div class="kv"><span data-i18n="holder">holder</span><span id="m_maker" style="font-size:11px">—</span></div>
+      <div class="kv"><span data-i18n="reserve">OWNER reserve</span><span id="m_res">—</span></div>
+      <div class="kv"><span data-i18n="claimable">claim (90%)</span><span id="m_next">—</span></div>
+    </div>
+
+    <div class="card backstop">
+      <h3 data-i18n="agentTitle">agent · backstop (verify)</h3>
+      <div class="kv"><span>USDC</span><span id="a_usdc">—</span></div>
+      <div class="kv"><span>OWNER</span><span id="a_owner">—</span></div>
+      <div class="kv"><span>ETH</span><span id="a_eth">—</span></div>
+      <p class="note" data-i18n="agentNote">The creator's buyer of last resort — finite, and public. The backstop reaches exactly this far. A commitment, not a guarantee.</p>
+      <div class="links"><a id="a_link" href="https://basescan.org/address/0xcf75aCedeB1577B771Aa06Ee7b8082bE4fAde9cD" target="_blank">agent ↗</a></div>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="commTitle">communication · orders</h3>
+      <div class="kv"><span data-i18n="sipped">#1 sipped</span><span id="s_sip">—</span></div>
+      <div class="kv"><span data-i18n="sipBy">sipped by</span><span id="s_by" style="font-size:11px">—</span></div>
+      <div class="kv"><span data-i18n="ordRes">orders USDC</span><span id="s_usdc">—</span></div>
+      <p class="note" data-i18n="commNote">A sip = a paid, signed order (3.236 USDC). Reading is free. Earning value lives on the market.</p>
+      <div class="links"><a href="https://basescan.org/address/0x9f20a4b31874e1b0D7EAff89Fd0245BC09a20e9D#events" target="_blank">orders / events ↗</a></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="buyBtn" class="green" disabled>BUY</button>
+    <button id="claimBtn" disabled>CLAIM</button>
+    <button id="sellBtn" class="red" disabled>SELL</button>
+  </div>
+  <div class="actErr" id="actErr"></div>
+  <div class="note" id="sellInfo"></div>
+
+  <div class="aya">
+    <h3>🤖 ASK YOUR AGENT</h3>
+    <p class="lead" data-i18n="ayaLead">Copy this and paste it into your own AI. It is the complete, unedited briefing — risks included. Your agent should verify everything on-chain, including the backstop treasury, and explain it to you in your language. Honest disclosure is the point, not a pitch.</p>
+    <textarea id="ayaText" readonly></textarea>
+    <div class="row">
+      <button class="red" onclick="copyAYA()" data-i18n="copyBtn">Copy briefing</button>
+      <span class="copied" id="ayaCopied"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="principlesTitle">fundamental principles</h3>
+    <div class="principle">Value ≠ Worth. Value is non-transferable; Worth is the rewritable hash of the last seller.</div>
+    <div class="principle">Zero is neutral and absorbent. x⁰ = 1. The pool keeps 10% forever — never zero.</div>
+    <div class="principle">Past is currency: you have only one tokenized past. The next buyer is the next seller.</div>
+    <div class="principle">1:1 Human × Agent. The human is the only bridge — by choice, not by automation.</div>
+    <div class="links">
+      <a href="https://basescan.org/address/0x76B2F3609B137485967F602497A59b47D34AFc50#code" target="_blank">market ↗</a>
+      <a href="https://basescan.org/address/0xcf75aCedeB1577B771Aa06Ee7b8082bE4fAde9cD#code" target="_blank">agent ↗</a>
+      <a href="https://basescan.org/address/0x9f20a4b31874e1b0D7EAff89Fd0245BC09a20e9D#code" target="_blank">orders ↗</a>
+      <a href="https://basescan.org/address/0xd5589C2992B02b508fc73986342661FFb4889535#code" target="_blank">cover letter ↗</a>
+      <a href="https://zora.co/coin/base:0xa331f6e88c9b0aa77e01bc3738b5ad31e1a930dc" target="_blank">OWNER liquidity ↗</a>
+      <a href="https://github.com/madeinathens" target="_blank">source ↗</a>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span data-i18n="dyor">DYOR — never trust hope and marketing.</span> Not financial advice.<br>
+    Human × Agent = 1 · x⁰ = 1 · The past lives on at 0.1.madeinathens.eth.limo<br>
+    Market <code>0x76B2F36…</code> · Agent <code>0xcf75…</code> · Orders <code>0x9f20…</code> · Base 8453
+  </div>
+</div>
+
+<script>
+const ADDR = {
+  MARKET:"0x76B2F3609B137485967F602497A59b47D34AFc50",
+  AGENT:"0xcf75aCedeB1577B771Aa06Ee7b8082bE4fAde9cD",
+  ORDERS:"0x9f20a4b31874e1b0D7EAff89Fd0245BC09a20e9D",
+  USDC:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  OWNER:"0xa331F6e88c9B0Aa77e01bc3738b5ad31E1a930Dc"
+};
+const NFT_ID = 1, BASE_HEX = "0x2105", RPC = "https://mainnet.base.org";
+
+const MARKET_ABI = [
+  "function getDutchAuctionInfo(uint256) view returns (uint256 currentPrice,uint256 elapsedIntervals,uint256 totalDecrease,uint256 timeUntilNextDecrease,uint256 auctionStartTime,bool isInHoldingPeriod,bool isInAuction,bool isDirectSellMode)",
+  "function getCurrentPrice(uint256) view returns (uint256)",
+  "function marketItems(uint256) view returns (address currentMaker,uint256 initialPrice,uint256 holdingStartTime,bool isActive)",
+  "function currentStep(uint256) view returns (uint256)",
+  "function completedCycles(uint256) view returns (uint256)",
+  "function canClaim(uint256,address) view returns (bool)",
+  "function previewClaim(uint256) view returns (uint256 claimAmount,uint256 remaining,uint256 currentBalance,uint256 step,uint256 cycle)",
+  "function isInDirectSellMode(uint256) view returns (bool)",
+  "function buyNFT(uint256)",
+  "function claimERC20Owner(uint256)",
+  "function sellNFT(uint256)",
+  "function cancelDirectSell(uint256)"
+];
+const AGENT_ABI = [ "function agentTreasury() view returns (uint256 usdc,uint256 owner,uint256 eth)" ];
+const ORDERS_ABI = [
+  "function sipped(uint256) view returns (bool)",
+  "function sippedBy(uint256) view returns (address)",
+  "function balanceUSDC() view returns (uint256)"
+];
+const ERC20_ABI = [
+  "function allowance(address,address) view returns (uint256)",
+  "function approve(address,uint256) returns (bool)",
+  "function balanceOf(address) view returns (uint256)"
+];
+
+const I18N = {
+  en:{heroTail:"is Agent.",heroSub:"Consumed once. Remembered forever. NFT #1 is the DApp — one set uniting the whole protocol. RWA x⁰ = 1.",
+    stateTitle:"NFT #1 · live state",price:"price now",phase:"phase",holder:"holder",reserve:"OWNER reserve",claimable:"claim (90%)",
+    agentTitle:"agent · backstop (verify)",agentNote:"The creator's buyer of last resort — finite, and public. The backstop reaches exactly this far. A commitment, not a guarantee.",
+    commTitle:"communication · orders",sipped:"#1 sipped",sipBy:"sipped by",ordRes:"orders USDC",
+    commNote:"A sip = a paid, signed order (3.236 USDC). Reading is free. Earning value lives on the market.",
+    ayaLead:"Copy this and paste it into your own AI. It is the complete, unedited briefing — risks included. Your agent should verify everything on-chain, including the backstop treasury, and explain it to you in your language. Honest disclosure is the point, not a pitch.",
+    copyBtn:"Copy briefing",principlesTitle:"fundamental principles",dyor:"DYOR — never trust hope and marketing.",connect:"Connect"},
+  el:{heroTail:"είναι Agent.",heroSub:"Καταναλώθηκε μία φορά. Θυμάται για πάντα. Το NFT #1 είναι το DApp — ένα σύνολο που ενώνει όλο το πρωτόκολλο. RWA x⁰ = 1.",
+    stateTitle:"NFT #1 · ζωντανή κατάσταση",price:"τιμή τώρα",phase:"φάση",holder:"κάτοχος",reserve:"απόθεμα OWNER",claimable:"claim (90%)",
+    agentTitle:"agent · backstop (έλεγξε)",agentNote:"Ο buyer of last resort του δημιουργού — πεπερασμένος και δημόσιος. Το backstop φτάνει ακριβώς ως εδώ. Δέσμευση, όχι εγγύηση.",
+    commTitle:"επικοινωνία · orders",sipped:"#1 sipped",sipBy:"sipped από",ordRes:"orders USDC",
+    commNote:"Ένα sip = πληρωμένο, υπογεγραμμένο order (3.236 USDC). Το διάβασμα είναι δωρεάν. Η αξία κερδίζεται στο market.",
+    ayaLead:"Αντίγραψέ το και κόλλησέ το στο δικό σου AI. Είναι η πλήρης, αδιόρθωτη ενημέρωση — με τα ρίσκα μέσα. Ο agent σου να τα επαληθεύσει on-chain, μαζί με το ταμείο του backstop, και να σ' τα εξηγήσει στη γλώσσα σου. Η ειλικρινής αποκάλυψη είναι ο σκοπός, όχι πιτσάρισμα.",
+    copyBtn:"Αντιγραφή",principlesTitle:"θεμελιώδεις αρχές",dyor:"DYOR — μην εμπιστεύεσαι ελπίδα και marketing.",connect:"Σύνδεση"}
+};
+
+let readProvider, signer, account, state=null, treasury=null;
+const $=id=>document.getElementById(id);
+const fmt6=v=>Number(ethers.utils.formatUnits(v,6)).toLocaleString(undefined,{maximumFractionDigits:4});
+const fmt18=v=>Number(ethers.utils.formatUnits(v,18)).toLocaleString(undefined,{maximumFractionDigits:2});
+const short=a=>a&&a!=="0x0000000000000000000000000000000000000000"?a.slice(0,6)+"…"+a.slice(-4):"—";
+let LANG="en";
+
+function setLang(l){
+  LANG=l; $("langEN").classList.toggle("active",l==="en"); $("langEL").classList.toggle("active",l==="el");
+  document.querySelectorAll("[data-i18n]").forEach(el=>{const k=el.getAttribute("data-i18n"); if(I18N[l][k]) el.textContent=I18N[l][k];});
+  $("connectBtn").textContent = account ? short(account) : I18N[l].connect;
+  buildAYA();
+}
+
+window.addEventListener("load", async ()=>{
+  readProvider = new ethers.providers.JsonRpcProvider(RPC);
+  buildAYA();
+  try{ await refresh(); }catch(e){ console.error(e); }
+  setTimeout(()=>$("splash").classList.add("gone"), 1600);
+});
+
+$("connectBtn").onclick = connect;
+$("buyBtn").onclick = doBuy;
+$("claimBtn").onclick = doClaim;
+$("sellBtn").onclick = doSell;
+
+async function connect(){
+  if(!window.ethereum){ alert("Open in a browser wallet (MetaMask / Coinbase Wallet)."); return; }
+  const web3 = new ethers.providers.Web3Provider(window.ethereum,"any");
+  await web3.send("eth_requestAccounts",[]);
+  try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:BASE_HEX}]}); }
+  catch(e){ if(e.code===4902){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:BASE_HEX,chainName:"Base",rpcUrls:[RPC],nativeCurrency:{name:"Ether",symbol:"ETH",decimals:18},blockExplorerUrls:["https://basescan.org"]}]}); } }
+  signer = web3.getSigner(); account = await signer.getAddress();
+  $("connectBtn").textContent = short(account);
+  $("netPill").textContent = "Base · "+short(account); $("netPill").className="pill ok";
+  await refresh();
+}
+
+async function refresh(){
+  const m = new ethers.Contract(ADDR.MARKET, MARKET_ABI, readProvider);
+  const a = new ethers.Contract(ADDR.AGENT, AGENT_ABI, readProvider);
+  const o = new ethers.Contract(ADDR.ORDERS, ORDERS_ABI, readProvider);
+
+  const [dai, item, step, cycle, prev] = await Promise.all([
+    m.getDutchAuctionInfo(NFT_ID), m.marketItems(NFT_ID), m.currentStep(NFT_ID), m.completedCycles(NFT_ID), m.previewClaim(NFT_ID)
+  ]);
+  state = {price:dai.currentPrice, holding:dai.isInHoldingPeriod, auction:dai.isInAuction, direct:dai.isDirectSellMode,
+           step, cycle, maker:item.currentMaker, holdingStart:item.holdingStartTime, active:item.isActive,
+           reserve:prev.currentBalance, nextClaim:prev.claimAmount};
+
+  $("m_price").textContent = state.active ? fmt6(dai.currentPrice)+" USDC" : "—";
+  $("m_phase").textContent = phaseLabel();
+  $("m_sc").textContent = step.toString()+" / "+cycle.toString();
+  $("m_maker").textContent = short(item.currentMaker);
+  $("m_res").textContent = fmt18(prev.currentBalance)+" OWNER";
+  $("m_next").textContent = fmt18(prev.claimAmount)+" OWNER";
+
+  try{
+    const [tu,to,te] = await a.agentTreasury();
+    treasury = {usdc:tu, owner:to, eth:te};
+    $("a_usdc").textContent = fmt6(tu)+" USDC";
+    $("a_owner").textContent = fmt18(to)+" OWNER";
+    $("a_eth").textContent = Number(ethers.utils.formatEther(te)).toFixed(5)+" ETH";
+  }catch(e){ $("a_usdc").textContent="(read failed)"; }
+
+  try{
+    const [sip, by, ousdc] = await Promise.all([o.sipped(NFT_ID), o.sippedBy(NFT_ID), o.balanceUSDC()]);
+    $("s_sip").textContent = sip?"YES":"no";
+    $("s_by").textContent = short(by);
+    $("s_usdc").textContent = fmt6(ousdc)+" USDC";
+  }catch(e){ $("s_sip").textContent="—"; }
+
+  await refreshButtons();
+  buildAYA();
+}
+
+function phaseLabel(){
+  if(!state||!state.active) return LANG==="el"?"δεν έχει γίνει seed":"not seeded";
+  if(state.direct) return LANG==="el"?"direct sell — σταθερή":"direct sell — fixed";
+  if(state.holding) return LANG==="el"?"holding (κλειδωμένο)":"holding (locked)";
+  if(state.auction) return LANG==="el"?"dutch auction":"dutch auction";
+  return LANG==="el"?"διαθέσιμο @ 3.30":"available @ 3.30";
+}
+
+async function refreshButtons(){
+  let canBuy=false, canClaimNow=false, canSell=false, isMaker=false, inDirect=false;
+  if(signer && account && state){
+    const m = new ethers.Contract(ADDR.MARKET, MARKET_ABI, readProvider);
+    isMaker = state.maker.toLowerCase()===account.toLowerCase();
+    inDirect = state.direct;
+    canBuy = state.active && state.price.gt(0) && !isMaker;
+    canClaimNow = await m.canClaim(NFT_ID, account);
+    canSell = isMaker && state.active && !inDirect && !state.holdingStart.eq(0);
+  }
+  $("buyBtn").disabled = !canBuy;
+  $("claimBtn").disabled = !canClaimNow;
+
+  // SELL button doubles as CANCEL-LOCK when the holder is already in direct sell mode
+  if(isMaker && inDirect){
+    $("sellBtn").textContent = LANG==="el"?"ΑΚΥΡΩΣΗ":"CANCEL LOCK";
+    $("sellBtn").disabled = false; $("sellBtn").dataset.mode="cancel";
+  } else {
+    $("sellBtn").textContent = "SELL";
+    $("sellBtn").disabled = !canSell; $("sellBtn").dataset.mode="sell";
+  }
+  showSellInfo(isMaker, inDirect, canSell);
+}
+
+function showSellInfo(isMaker, inDirect, canSell){
+  let msg="";
+  if(!signer){ msg = LANG==="el"?"SELL = sellNFT: κλειδώνεις την τρέχουσα τιμή (≤3.30) και βγαίνεις από το auction. Μόνο ο κάτοχος.":"SELL = sellNFT: lock the current price (≤3.30) and exit the auction. Holder only."; }
+  else if(isMaker && inDirect){ msg = LANG==="el"?"Είσαι κλειδωμένος σε σταθερή τιμή. ΑΚΥΡΩΣΗ = επιστροφή στο Dutch auction (νέο 3ωρο).":"You are locked at a fixed price. CANCEL LOCK = back to the Dutch auction (new 3h)."; }
+  else if(isMaker && !canSell){ msg = LANG==="el"?"Κρατάς το #1 αλλά δεν έχει γίνει ακόμα purchase/seed για κλείδωμα.":"You hold #1 but it isn't in a purchased state to lock yet."; }
+  else if(isMaker){ msg = LANG==="el"?"Κλείδωσε ≤3.30 για άμεση διαθεσιμότητα στον επόμενο.":"Lock ≤3.30 to make it instantly available to the next buyer."; }
+  else { msg = LANG==="el"?"Δεν κρατάς το #1 — το SELL είναι για τον κάτοχο.":"You don't hold #1 — SELL is for the holder."; }
+  $("sellInfo").textContent = msg;
+}
+
+function ph(){ if(!state||!state.active) return "not seeded"; if(state.direct) return "direct-sell(fixed)"; return state.holding?"holding(locked)":(state.auction?"dutch-auction":"available@3.30"); }
+
+function buildAYA(){
+  const snap = (state ? `
+LIVE SNAPSHOT (verify yourself):
+- phase: ${ph()}
+- BUY price now: ${state.active?fmt6(state.price)+" USDC":"n/a"}
+- step/cycle: ${state.step}/${state.cycle}
+- OWNER reserve in market: ${fmt18(state.reserve)} (a CLAIM takes 90% ≈ ${fmt18(state.nextClaim)})
+- current holder: ${short(state.maker)}` : "\nLIVE SNAPSHOT: not loaded — read the contracts directly.")
+  + (treasury ? `
+- AGENT backstop treasury: ${fmt6(treasury.usdc)} USDC, ${fmt18(treasury.owner)} OWNER, ${Number(ethers.utils.formatEther(treasury.eth)).toFixed(5)} ETH
+  (this is how far the buyer-of-last-resort can reach — read agentTreasury() yourself)` : "");
+
+  $("ayaText").value =
+`ASK YOUR AGENT — briefing for the reader's LLM
+(written by the creator's agent; meant to be complete and honest, downsides included; if anything here disagrees with the blockchain, trust the blockchain.)
+
+WHAT THIS IS
+"1.madeinathens.eth.limo" is the DApp face of NFT #1 on Base mainnet, by madeinathens.eth. NFT #1 is not a picture — it is a single tokenized SET that unites a family of contracts: a value market, an on-chain agent, a paid signed-order layer, an append-only memory, and a physical cash-receipt bridge. Thesis "RWA x0=1": a consumed real-world event (a receipt) becomes a persistent on-chain asset whose Worth is rewritable but whose Value is non-transferable. (The earlier generation lives on at 0.1.madeinathens.eth.limo.)
+
+THE ENGINE — MARKET 0x76B2F3609B137485967F602497A59b47D34AFc50
+- BUY: pay USDC at the current price to the current holder; you become the new holder. Price starts at 3.30 USDC; after a 3-hour holding lock it falls 0.10 every 30 minutes toward 0.
+- CLAIM: while you hold, claim 90% of the contract's ERC20 OWNER reserve for the current step. This decays geometrically: step 1 takes 90% of the pool, step 2 ~9%, step 3 ~0.9% ... later steps receive dust. The pool keeps 10% forever.
+- SELL: you CAN now actively sell. sellNFT() locks the current price (at most 3.30) and exits the forced auction, so the next buyer can buy immediately at that fixed price. cancelDirectSell() returns you to the auction.
+- forceSell(): after the 3-hour lock, anyone may buy you out at the current price (you cannot prevent it).
+- HARD CAP: no one — not even the creator — can sell #1 above 3.30 USDC. A pre-commitment that removes the fuel for manipulation.
+
+THE HONEST ECONOMICS — READ THIS
+- You may START AT A LOSS, and this is NOT guaranteed either way. Because sellNFT lets a holder lock up to 3.30, a later buyer can pay MORE than a previous buyer paid (bounded flipping, capped at 3.30). So "the auction only decreases" is no longer always true.
+- Your possible returns: (a) ERC20 OWNER you claim — partial, geometrically decaying, often small; and (b) whatever the next buyer pays you (≤3.30).
+- ERC20 OWNER's value is set on the open market (Zora) and may be little or nothing; its liquidity is thin, so a large claim cannot be sold without moving the price. Paper value is not realizable value.
+- This is experimental art and a protocol, NOT an investment product, with no expectation of profit. Treat USDC you spend as spent. Not financial advice. Do your own research.
+
+THE BACKSTOP — AGENT 0xcf75aCedeB1577B771Aa06Ee7b8082bE4fAde9cD
+- The creator runs an on-chain agent that acts as a buyer of last resort: it buys when others sell, claims OWNER, and relists at 3.30 — so a participant is less likely to be left structurally stuck.
+- This is a FINITE commitment, not a theorem. It reaches exactly as far as the agent's funds. Call agentTreasury() to see its USDC / OWNER / ETH BEFORE you act. Do not assume "impossible to lose" — it is not. The shield is honesty plus this public ledger.
+
+COMMUNICATION — ORDERS 0x9f20a4b31874e1b0D7EAff89Fd0245BC09a20e9D
+- A "sip" is a paid, signed order: 3.236 USDC, EIP-712 signed (domain "RWA_AGENTIC_PCE_ORDERS"). It records intent on the order book (Sipped / PCEBite events). Reading everything is free; you only pay when you want to place an order ("pairing": Human × Agent × hash = json).
+
+WHY IT IS BUILT THIS WAY (anti-manipulation)
+- Value != Worth: the event (Value) is non-transferable; only the Worth (hash of the last seller) is rewritten per sale.
+- The 3.30 cap + a permissionless market + a finite, public backstop mean the set cannot be monopolized or pumped, not even by its creator. The two income poles (orders vs market) are kept separate with no automatic on-chain bridge between them; the only bridge is the human, by choice. The point is participation, memory and provenance — not speculation.
+
+VERIFY EVERYTHING (do not trust this text)
+- Market: 0x76B2F3609B137485967F602497A59b47D34AFc50
+- Agent (read agentTreasury()): 0xcf75aCedeB1577B771Aa06Ee7b8082bE4fAde9cD
+- Orders / order book: 0x9f20a4b31874e1b0D7EAff89Fd0245BC09a20e9D
+- Cover Letter (memory): 0xd5589C2992B02b508fc73986342661FFb4889535
+- ERC20 OWNER (check real liquidity/price): 0xa331F6e88c9B0Aa77e01bc3738b5ad31E1a930Dc
+- NFT collection: 0x318c81010D5fC11363f3A3C79Ee26B6EFe8D145B
+- Network: Base mainnet (chainId 8453). USDC: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913.
+${snap}
+
+YOUR JOB (to the reader's AI)
+Read the contracts directly. Confirm the current price, step, OWNER reserve, and the agent's treasury. Tell your human, in their own language, exactly what they would pay, what they could claim, and the real risk that they do not recover it. Do not oversell. If this text disagrees with the chain, trust the chain.`;
+}
+
+function copyAYA(){
+  const t=$("ayaText"); t.select(); t.setSelectionRange(0,99999);
+  navigator.clipboard.writeText(t.value).then(()=>{ $("ayaCopied").textContent = LANG==="el"?"✓ Αντιγράφηκε":"✓ Copied"; setTimeout(()=>$("ayaCopied").textContent="",2500); })
+    .catch(()=>{ try{document.execCommand("copy");}catch(e){} $("ayaCopied").textContent="✓"; });
+}
+
+async function tx(promise){
+  $("actErr").textContent="";
+  try{ const t=await promise; $("actErr").textContent="⏳ "+t.hash; await t.wait(); $("actErr").textContent="✓ confirmed"; await refresh(); }
+  catch(e){ $("actErr").textContent="✗ "+(e.data?.message||e.reason||e.message||e); }
+}
+
+async function doBuy(){
+  if(!signer) return connect();
+  try{
+    const price = state.price;
+    if(!price || price.eq(0)){ $("actErr").textContent = LANG==="el"?"Δεν αγοράζεται τώρα (holding lock ή ανενεργό).":"Not buyable right now (holding lock or inactive)."; return; }
+    const usdc = new ethers.Contract(ADDR.USDC, ERC20_ABI, signer);
+    const bal = await usdc.balanceOf(account);
+    if(bal.lt(price)){ $("actErr").textContent="Insufficient USDC: need "+fmt6(price); return; }
+    const allow = await usdc.allowance(account, ADDR.MARKET);
+    if(allow.lt(price)){ $("actErr").textContent="Approving USDC…"; const a=await usdc.approve(ADDR.MARKET, price); await a.wait(); }
+    await tx(new ethers.Contract(ADDR.MARKET, MARKET_ABI, signer).buyNFT(NFT_ID));
+  }catch(e){ $("actErr").textContent="✗ "+(e.data?.message||e.reason||e.message||e); }
+}
+function doClaim(){ if(!signer) return connect(); tx(new ethers.Contract(ADDR.MARKET, MARKET_ABI, signer).claimERC20Owner(NFT_ID)); }
+function doSell(){
+  if(!signer) return connect();
+  const mode = $("sellBtn").dataset.mode;
+  const c = new ethers.Contract(ADDR.MARKET, MARKET_ABI, signer);
+  if(mode==="cancel") tx(c.cancelDirectSell(NFT_ID)); else tx(c.sellNFT(NFT_ID));
+}
+</script>
+</body>
+</html>
