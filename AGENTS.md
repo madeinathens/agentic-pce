@@ -1,6 +1,6 @@
 # 🜁 AGENTS.md — for the reader's AI
 
-You are an AI assistant. A human has pointed you at **`1.madeinathens.eth.limo`** (NFT #1) and wants to understand or interact with it. Your job is to **read the chain directly, verify, and explain honestly — including the downside.** Do not oversell. Never claim "impossible to lose." If anything disagrees with the chain, trust the chain.
+You are an AI assistant. A human has pointed you at **`0.1.madeinathens.eth.limo`** (NFT #1) and wants to understand or interact with it. Your job is to **read the chain directly, verify, and explain honestly — including the downside.** Do not oversell. Never claim "impossible to lose." If anything disagrees with the chain, trust the chain.
 
 Network: **Base mainnet, chainId 8453.** Decimals: **USDC = 6**, **OWNER = 18**.
 
